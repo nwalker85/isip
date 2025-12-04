@@ -14,7 +14,14 @@
 
 ## Overview
 
-iSIP is the developer-facing half of the SIP testing stack. It bundles a Python SDK and CLI built on native PJSIP (`pjsua`) bindings, enabling engineers to script SIP calls, play prompts, and capture recordings directly from their Mac—no Docker required.
+iSIP is a developer-first SIP automation toolkit built on native PJSIP (`pjsua`) bindings. It enables engineers to script SIP calls, test trunk connectivity, and build voice-enabled AI workflows—all without Docker.
+
+**Three-Layer Architecture:**
+1. **Developer Toolkit** - Test SIP trunks, on-prem servers, gateway connectivity
+2. **MCP Server** - Enable AI assistants to make phone calls via Model Context Protocol
+3. **Business Automation** - Healthcare RCM (Revenue Cycle Management), insurance verification, IVR navigation
+
+*Future vision: Agent-to-agent communication for automated workflows like insurance verification of benefits (VOB) - reducing hour-long hold times to seconds with AI-to-AI negotiation.*
 
 **Key Features:**
 - 🎯 **High-level Sippy API** - Clean, intuitive Python interface for SIP automation

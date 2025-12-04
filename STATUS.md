@@ -1,19 +1,25 @@
 # iSIP Project Status
 
 **Last Updated:** 2024-12-04  
-**Status:** ✅ Fully Operational (Local Development)
+**Status:** ✅ Shipped to GitHub  
+**Repository:** https://github.com/Ravenhelm/isip
 
 ---
 
 ## Quick Summary
 
-iSIP is a **macOS SIP automation toolkit** for testing voice AI systems. It provides a Python SDK and CLI for scripting SIP calls with integrated TTS/STT services.
+iSIP is a **macOS SIP automation toolkit** with three layers:
+
+1. **Developer Toolkit** - Test SIP trunks, on-prem servers, LiveAgent gateways
+2. **MCP Server** - Enable AI assistants to make phone calls
+3. **Business Automation** - Healthcare RCM, insurance verification (future)
 
 **Current State:**
-- ✅ End-to-end tested with live SIP call
+- ✅ End-to-end tested with live SIP calls (28.9s duration)
+- ✅ MCP server functional (AI assistants can make calls)
 - ✅ Integrated with Ravenhelm shared services (Hliðskjálf)
-- ✅ Git repository initialized and documented
-- ✅ Docker deployment ready (untested)
+- ✅ Shipped to GitHub (Ravenhelm/isip)
+- ⚠️ IVR navigation (DTMF) - Planned for healthcare RCM demo
 
 ---
 
