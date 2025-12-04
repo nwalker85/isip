@@ -457,9 +457,19 @@ async def get_prompt(name: str, arguments: dict) -> GetPromptResult:
     raise ValueError(f"Unknown prompt: {name}")
 
 
-def main():
+async def run_server():
     """Run the MCP server."""
-    asyncio.run(stdio_server(app))
+    async with stdio_server() as (read_stream, write_stream):
+        await app.run(
+            read_stream,
+            write_stream,
+            app.create_initialization_options()
+        )
+
+
+def main():
+    """Entry point for the MCP server."""
+    asyncio.run(run_server())
 
 
 if __name__ == "__main__":
