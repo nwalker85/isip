@@ -21,6 +21,7 @@ iSIP is the developer-facing half of the SIP testing stack. It bundles a Python 
 - 📞 **SIP Protocol Support** - Full SIP signaling via battle-tested PJSIP library
 - 🤖 **AI Integration** - OpenAI TTS for prompts, Deepgram STT for transcription
 - 🖥️ **CLI Tool** - Command-line interface for single calls or JSON test suites
+- 🔌 **MCP Server** - Enable AI assistants (Claude, Cursor) to make phone calls! 🎉
 - 🐳 **Docker Ready** - Cross-platform deployment via containers
 - 🔗 **LiveKit Compatible** - Tested with LiveKit SIP gateway
 
@@ -114,6 +115,37 @@ result = quick_call(
 )
 print(result.transcript)
 ```
+
+### MCP Server (AI Assistants Make Calls!)
+
+**NEW!** Enable Claude Desktop, Cursor, or any MCP client to make phone calls:
+
+**1. Install MCP Server:**
+```bash
+cd mcp-server-isip
+pip install -e .
+```
+
+**2. Configure Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "isip": {
+      "command": "mcp-server-isip",
+      "cwd": "/Users/nwalker/Development/Quant/isip"
+    }
+  }
+}
+```
+
+**3. Use it!**
+```
+Claude: "Make a call to +19999999999 and introduce yourself"
+Claude: "Call the agent and ask for a status update"
+Claude: "List my recent recordings"
+```
+
+**See** [`mcp-server-isip/QUICKSTART.md`](mcp-server-isip/QUICKSTART.md) for complete setup guide.
 
 ### CLI Usage
 
