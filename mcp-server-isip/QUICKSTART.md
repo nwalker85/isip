@@ -21,17 +21,32 @@ pip install -e .
 
 Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
+**Recommended (uses project .env):**
+
 ```json
 {
   "mcpServers": {
     "isip": {
-      "command": "mcp-server-isip",
+      "command": "/Users/nwalker/Development/Quant/isip/sdk/python/.venv/bin/mcp-server-isip",
+      "cwd": "/Users/nwalker/Development/Quant/isip"
+    }
+  }
+}
+```
+
+**Alternative (explicit environment):**
+
+```json
+{
+  "mcpServers": {
+    "isip": {
+      "command": "/Users/nwalker/Development/Quant/isip/sdk/python/.venv/bin/mcp-server-isip",
       "cwd": "/Users/nwalker/Development/Quant/isip",
       "env": {
         "OPENAI_API_KEY": "sk-proj-...",
         "DEEPGRAM_API_KEY": "...",
         "SIP_USERNAME": "nate@ravenhelm.co",
-        "SIP_PASSWORD": "F0rTh3M0$tP@rt",
+        "SIP_PASSWORD": "...",
         "SIP_GATEWAY": "2g0282esbg2.sip.livekit.cloud"
       }
     }
@@ -39,18 +54,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-Or let it use the project `.env`:
-
-```json
-{
-  "mcpServers": {
-    "isip": {
-      "command": "mcp-server-isip",
-      "cwd": "/Users/nwalker/Development/Quant/isip"
-    }
-  }
-}
-```
+**Note:** Use the **full path** to avoid `ENOENT` errors. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) if you encounter issues.
 
 ## Configure Cursor
 
