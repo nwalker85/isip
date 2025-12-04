@@ -57,14 +57,26 @@ class MCPServerState:
     def __init__(self):
         self.calls: list[CallRecord] = []
         self.call_counter = 0
-        self.output_dir = Path(os.getenv("ISIP_OUTPUT_DIR", "./sippy_output"))
-        self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Load environment variables
+        # Load environment variables first
         from dotenv import load_dotenv
         env_path = Path(__file__).parent.parent.parent.parent / ".env"
         if env_path.exists():
             load_dotenv(env_path)
+        
+        # Use absolute path for output directory to avoid permission issues
+        default_output = Path(__file__).parent.parent.parent.parent / "sippy_output"
+        self.output_dir = Path(os.getenv("ISIP_OUTPUT_DIR", str(default_output)))
+        
+        # Create output dir with error handling
+        try:
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            # If we can't create in the desired location, use temp dir
+            import tempfile
+            self.output_dir = Path(tempfile.gettempdir()) / "isip_output"
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            print(f"Warning: Using temp directory for output: {self.output_dir}", file=sys.stderr)
     
     def add_call(self, result: CallResponse, phone: str, prompt: str) -> CallRecord:
         """Add a call to the history."""
