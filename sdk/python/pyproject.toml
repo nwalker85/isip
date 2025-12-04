@@ -1,0 +1,24 @@
+[project]
+name = "siptester"
+version = "0.1.0"
+description = "Mac-native SIP testing helper built on PJSIP"
+authors = [{name = "Red Team"}]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "requests>=2.32.0"
+]
+
+[project.optional-dependencies]
+dev = ["black", "ruff", "mypy"]
+
+[project.scripts]
+siptester = "siptester.cli:main"
+
+[project.urls]
+homepage = "https://github.com/tmakkonen/sipcmd"
+
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+

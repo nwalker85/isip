@@ -1,0 +1,52 @@
+# Environment and secrets
+.env
+api_keys.sh
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.tox/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+*.sublime-*
+
+# Output files
+sippy_output/
+*.wav
+*.mp3
+recordings/
+prompts/
+
+# Test artifacts
+.coverage
+htmlcov/
+*.log
+
+# OS
+Thumbs.db
+.Spotlight-V100
+.Trashes
+
+# Temporary files
+*.tmp
+*.bak
+*~

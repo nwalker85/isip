@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Project-specific
+sippy_output/
+*.wav
+*.mp3
+.env
+api_keys.sh
+
+# Documentation (keep README for reference)
+*.md
+!README.md
+
+# Tests (we'll mount these as volumes)
+tests/
+

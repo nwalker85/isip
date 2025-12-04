@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  isip:
+    build: .
+    container_name: isip-tester
+    env_file:
+      - .env
+    volumes:
+      # Mount output directory for recordings/prompts
+      - ./sippy_output:/app/output
+      # Mount test scenarios if needed
+      - ./tests:/app/tests:ro
+    # Override entrypoint for interactive testing
+    # docker-compose run --rm isip call --gateway ... --phone ...
+    command: --help
+    
+  # Headless worker for CI/CD or scheduled tests
+  isip-worker:
+    build: .
+    container_name: isip-worker
+    env_file:
+      - .env
+    volumes:
+      - ./sippy_output:/app/output
+      - ./tests:/app/tests:ro
+    # Run test suite on startup
+    command: >
+      suite
+      --suite /app/tests/example_tests.json
+      --gateway ${SIP_GATEWAY}
+      --user ${SIP_USERNAME}
+      --password ${SIP_PASSWORD}
+    restart: "no"
+
+networks:
+  default:
+    name: isip-network
+
