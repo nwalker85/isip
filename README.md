@@ -1,542 +1,221 @@
-# iSIP — macOS SIP Automation Toolkit
+# isip — give your AI agent a phone ☎️
 
 <div align="center">
 
-**A developer-first SIP testing framework with integrated AI voice services**
+**An MCP server (plus Python SDK and CLI) that lets an AI agent place and conduct real phone calls over SIP.**
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![PJSIP](https://img.shields.io/badge/PJSIP-2.16-green.svg)](https://www.pjsip.org/)
-[![Status](https://img.shields.io/badge/status-prototype-yellow.svg)]()
+[![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](https://modelcontextprotocol.io/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 </div>
 
 ---
 
-## Overview
+## What it does
 
-iSIP is a developer-first SIP automation toolkit built on native PJSIP (`pjsua`) bindings. It enables engineers to script SIP calls, test trunk connectivity, and build voice-enabled AI workflows—all without Docker.
+Point Claude Desktop, Cursor, or any MCP client at `isip` and your agent can **dial a real phone number, speak (TTS), listen (STT), record the call, and report back a transcript** — no Twilio app to build, no SaaS platform, no Docker required. It's built on the native, battle-tested **PJSIP** stack.
 
-**Three-Layer Architecture:**
-1. **Developer Toolkit** - Test SIP trunks, on-prem servers, gateway connectivity
-2. **MCP Server** - Enable AI assistants to make phone calls via Model Context Protocol
-3. **Business Automation** - Healthcare RCM (Revenue Cycle Management), insurance verification, IVR navigation
+Under the hood there are three ways to drive a call:
 
-*Future vision: Agent-to-agent communication for automated workflows like insurance verification of benefits (VOB) - reducing hour-long hold times to seconds with AI-to-AI negotiation.*
-
-**Key Features:**
-- 🎯 **High-level Sippy API** - Clean, intuitive Python interface for SIP automation
-- 📞 **SIP Protocol Support** - Full SIP signaling via battle-tested PJSIP library
-- 🤖 **AI Integration** - OpenAI TTS for prompts, Deepgram STT for transcription
-- 🖥️ **CLI Tool** - Command-line interface for single calls or JSON test suites
-- 🔌 **MCP Server** - Enable AI assistants (Claude, Cursor) to make phone calls! 🎉
-- 🐳 **Docker Ready** - Cross-platform deployment via containers
-- 🔗 **LiveKit Compatible** - Tested with LiveKit SIP gateway
+1. **MCP server** — expose calling as tools to any AI agent.
+2. **Python SDK (`Sippy`)** — a clean high-level API: `sippy.call(target, prompt=…)` → transcript.
+3. **CLI (`siptester`)** — single calls or JSON-defined test suites.
 
 ---
 
-## Quick Start
+## Your agent, making a phone call
+
+Once the MCP server is connected to Claude Desktop or Cursor, the model can place calls in plain language:
+
+```
+You:    "Call +1 512-555-0142, introduce yourself, and ask whether they're open today."
+Claude: 📞 Calling… connected (24.1s).
+        Transcript: "Hi! Yes, we're open until 6pm today. How can I help?"
+```
+
+MCP tools exposed to the agent:
+
+| Tool | What it does |
+|------|--------------|
+| `place_call(phone, prompt)` | Dial a number, speak a prompt, transcribe the response |
+| `list_recordings()` | Review prior call recordings + transcripts |
+
+The agent drives the phone; `isip` handles SIP signaling, audio, TTS/STT, and recording.
+
+---
+
+## Why this exists
+
+Giving an agent a phone unlocks two things:
+
+1. **Testing voice AI** — script and regression-test SIP voice agents, trunks, gateways, and IVRs from code or from an agent itself.
+2. **Agent-to-agent telephony** *(the bigger idea)* — an AI that handles the hour-long hold calls humans hate (e.g. insurance **verification of benefits**), and negotiates **AI-to-AI** when the other side is automated too — turning a one-hour hold into seconds.
+
+---
+
+## Quick start
 
 ### Prerequisites
+- macOS (10.15+) · Python 3.12+ · Homebrew
 
-- **macOS** (10.15+)
-- **Python 3.12+**
-- **Homebrew**
-
-### Installation
+### Install
 
 ```bash
-# 1. Install system dependencies
+# 1. System dependencies
 brew install pjproject ffmpeg
 
-# 2. Clone repository
-git clone <your-repo-url>
-cd isip
-
-# 3. Set up Python environment
-cd sdk/python
-python3.12 -m venv .venv
-source .venv/bin/activate
+# 2. Clone + set up the SDK
+git clone https://github.com/nwalker85/isip.git
+cd isip/sdk/python
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -e .
 
-# 4. Configure credentials
-cp .env.example .env
-# Edit .env with your API keys and SIP credentials
+# 3. Configure credentials
+cp ../../.env.example ../../.env   # then edit with your keys
 ```
 
-### Configuration
-
-Create a `.env` file with your credentials:
+`.env`:
 
 ```bash
-# AI Services
+# AI services
 OPENAI_API_KEY=sk-...
 DEEPGRAM_API_KEY=...
-ELEVENLABS_API_KEY=...  # Optional
+ELEVENLABS_API_KEY=...        # optional
 
-# SIP Gateway
+# SIP gateway
 SIP_USERNAME=your_username
 SIP_PASSWORD=your_password
-SIP_GATEWAY=2g0282esbg2.sip.livekit.cloud
+SIP_GATEWAY=<your-gateway>.sip.livekit.cloud
 ```
 
----
+### Connect it to your agent (MCP)
 
-## Usage
-
-### Python API (Recommended)
-
-The Sippy API provides the cleanest interface:
-
-```python
-from siptester import Sippy, VoiceService, SipHeaders
-
-# Configure AI services (auto-loads from .env)
-openai = VoiceService("openai", "tts-1")
-deepgram = VoiceService("deepgram", "nova-2")
-
-# Create Sippy client
-sippy = Sippy(voice_service=openai, transcription_service=deepgram)
-
-# Configure SIP target
-target = SipHeaders(sip_to="sip:+19999999999@gateway.sip.livekit.cloud")
-
-# Make call
-result = sippy.call(target, prompt="Hello, this is a test call")
-
-# Check results
-if result.established:
-    print(f"Call duration: {result.duration}s")
-    print(f"Transcript: {result.transcript}")
-```
-
-**One-liner for quick tests:**
-
-```python
-from siptester import quick_call
-
-result = quick_call(
-    phone="+19999999999",
-    prompt="Hello, is anyone there?",
-    username="your_username",
-    password="your_password"
-)
-print(result.transcript)
-```
-
-### MCP Server (AI Assistants Make Calls!)
-
-**NEW!** Enable Claude Desktop, Cursor, or any MCP client to make phone calls:
-
-**1. Install MCP Server:**
 ```bash
 cd mcp-server-isip
 pip install -e .
 ```
 
-**2. Configure Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+Add to Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
 ```json
 {
   "mcpServers": {
     "isip": {
       "command": "mcp-server-isip",
-      "cwd": "/Users/nwalker/Development/Quant/isip"
+      "cwd": "/path/to/isip"
     }
   }
 }
 ```
 
-**3. Use it!**
-```
-Claude: "Make a call to +19999999999 and introduce yourself"
-Claude: "Call the agent and ask for a status update"
-Claude: "List my recent recordings"
+Then just ask Claude to place a call. See [`mcp-server-isip/QUICKSTART.md`](mcp-server-isip/QUICKSTART.md) for the full setup.
+
+### Or call from Python
+
+```python
+from siptester import Sippy, VoiceService, SipHeaders
+
+sippy = Sippy(
+    voice_service=VoiceService("openai", "tts-1"),
+    transcription_service=VoiceService("deepgram", "nova-2"),
+)
+target = SipHeaders(sip_to="sip:+15125550142@<your-gateway>.sip.livekit.cloud")
+result = sippy.call(target, prompt="Hello, this is a test call.")
+
+if result.established:
+    print(result.duration, result.transcript)
 ```
 
-**See** [`mcp-server-isip/QUICKSTART.md`](mcp-server-isip/QUICKSTART.md) for complete setup guide.
+One-liner:
 
-### CLI Usage
+```python
+from siptester import quick_call
+print(quick_call(phone="+15125550142", prompt="Hello, is anyone there?",
+                 username="user", password="pass").transcript)
+```
+
+### Or from the CLI
 
 ```bash
-# Activate virtual environment
 source sdk/python/.venv/bin/activate
 
-# Single call with TTS and transcription
 siptester call \
-  --gateway 2g0282esbg2.sip.livekit.cloud \
-  --user tester \
-  --password secret \
-  --phone +15127812507 \
-  --prompt-text "Hello, this is a test" \
-  --openai-key "$OPENAI_API_KEY" \
-  --deepgram-key "$DEEPGRAM_API_KEY"
+  --gateway "$SIP_GATEWAY" --user "$SIP_USERNAME" --password "$SIP_PASSWORD" \
+  --phone +15125550142 --prompt-text "Hello, this is a test" \
+  --openai-key "$OPENAI_API_KEY" --deepgram-key "$DEEPGRAM_API_KEY"
 
-# Run a test suite
-siptester suite \
-  --suite tests/example_tests.json \
-  --gateway "$SIP_GATEWAY" \
-  --user "$SIP_USERNAME" \
-  --password "$SIP_PASSWORD"
+# Or a JSON test suite:
+siptester suite --suite tests/example_tests.json \
+  --gateway "$SIP_GATEWAY" --user "$SIP_USERNAME" --password "$SIP_PASSWORD"
 ```
-
-### End-to-End Testing
-
-Run the comprehensive test suite:
-
-```bash
-cd /path/to/isip
-source sdk/python/.venv/bin/activate
-python test_e2e.py
-```
-
-This tests:
-1. ✅ OpenAI TTS generation
-2. ✅ SIP configuration & authentication
-3. ✅ Live call to LiveKit gateway
-4. ✅ Audio prompt playback
-5. ✅ Response recording
-6. ✅ Deepgram transcription
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    iSIP Stack                                │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────────────────────────────────────┐          │
-│  │           Sippy High-Level API                │          │
-│  │  (VoiceService, SipHeaders, CallResponse)    │          │
-│  └──────────────────┬───────────────────────────┘          │
-│                     │                                        │
-│  ┌──────────────────▼───────────────────────────┐          │
-│  │      SipTestClient (Low-Level API)            │          │
-│  │         Python Wrapper Layer                  │          │
-│  └──────────────────┬───────────────────────────┘          │
-│                     │                                        │
-│  ┌──────────────────▼───────────────────────────┐          │
-│  │           PJSIP Native Bindings               │          │
-│  │        (pjsua Python Module)                  │          │
-│  └──────────────────┬───────────────────────────┘          │
-│                     │                                        │
-│                     ▼                                        │
-│         ┌────────────────────────┐                          │
-│         │  SIP Gateway (LiveKit) │                          │
-│         └────────────────────────┘                          │
-│                     │                                        │
-│         ┌───────────▼────────────┐                          │
-│         │  AI Services (Cloud)   │                          │
-│         │  OpenAI   │   Deepgram │                          │
-│         └────────────────────────┘                          │
-└─────────────────────────────────────────────────────────────┘
+  AI agent (Claude / Cursor)
+        │  MCP
+        ▼
+  mcp-server-isip ──► Sippy (high-level API) ──► SipTestClient ──► PJSIP (native)
+                              │                                        │
+                       OpenAI TTS / Deepgram STT                 SIP gateway (e.g. LiveKit)
+                                                                       │
+                                                                  the phone network
 ```
+
+- **MCP server** (`mcp-server-isip/`) — agent-facing tools.
+- **Python SDK** (`sdk/python/siptester/`) — `Sippy` high-level API, low-level `SipTestClient`, and the `siptester` CLI.
+- **PJSIP** — native SIP signaling.
+- **AI services** — OpenAI TTS for prompts, Deepgram STT for transcription; ElevenLabs optional.
 
 ---
 
-## Project Structure
+## Status
 
-```
-isip/
-├── .env.example              # Environment template
-├── .gitignore               # Git ignore rules
-├── Dockerfile               # Docker build for Linux deployment
-├── docker-compose.yml       # Docker orchestration
-├── README.md                # This file
-├── EXAMPLES.md              # Detailed usage examples
-├── DEPLOYMENT.md            # Deployment guide (Mac/Docker/K8s)
-├── projectplan.md           # Development roadmap
-│
-├── sdk/python/              # Python SDK
-│   ├── pyproject.toml       # Package configuration
-│   ├── README.md            # SDK documentation
-│   └── siptester/           # Main package
-│       ├── __init__.py      # Package exports
-│       ├── cli.py           # CLI implementation
-│       ├── client.py        # Low-level SIP client
-│       └── sippy.py         # High-level Sippy API
-│
-├── examples/                # Example scripts
-│   ├── example_sippy.py     # Comprehensive Python examples
-│   └── test_sip_connection.sh  # Bash wrapper script
-│
-└── test_e2e.py              # End-to-end test suite
-```
+A working prototype, verified end-to-end (live calls against a LiveKit SIP gateway):
 
----
-
-## Testing
-
-### ✅ **Verified Components**
-
-All components have been tested end-to-end:
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| PJSIP Bindings | ✅ Working | Native SIP stack operational |
-| Python SDK | ✅ Working | All imports successful |
-| Sippy API | ✅ Working | High-level interface functional |
-| OpenAI TTS | ✅ Working | Audio generation confirmed |
-| LiveKit SIP | ✅ Working | 28.8s live call completed |
-| Audio Recording | ✅ Working | 899KB recording captured |
-| Deepgram STT | ✅ Working | Transcription verified |
-| CLI Tool | ✅ Working | Command-line interface functional |
-
-### Test Results
-
-Latest end-to-end test (2024-12-04):
-```
-✓ TTS Generation:  PASS (90.8 KB audio file)
-✓ SIP Config:      PASS (LiveKit authentication)
-✓ Live SIP Call:   PASS (28.8s call, transcript received)
-
-Transcript: "I hear you loud and clear. How can I help you today?"
-```
-
----
-
-## Deployment
-
-### macOS (Native)
-
-Current implementation optimized for local development on macOS.
-
-**Pros:**
-- Fast iteration cycle
-- Native audio device support
-- Direct Homebrew integration
-
-**Setup:** See [Quick Start](#quick-start)
-
-### Docker (Cross-Platform)
-
-Deploy on Linux, Windows (WSL), or containerized environments.
-
-```bash
-# Build image
-docker build -t isip:latest .
-
-# Run single test
-docker run --rm --env-file .env isip:latest call \
-  --gateway 2g0282esbg2.sip.livekit.cloud \
-  --user "$SIP_USERNAME" \
-  --password "$SIP_PASSWORD" \
-  --phone +19999999999
-
-# Run test suite
-docker-compose up isip-worker
-```
-
-**See:** [`DEPLOYMENT.md`](DEPLOYMENT.md) for complete deployment guide including:
-- Kubernetes CronJobs
-- CI/CD integration (GitHub Actions)
-- AWS Lambda functions
-- Production patterns
-
----
-
-## API Reference
-
-### Sippy High-Level API
-
-**VoiceService** - Configure AI voice providers
-```python
-VoiceService(
-    provider: Literal["openai", "elevenlabs", "deepgram"],
-    model: str,
-    api_key: Optional[str] = None,  # Auto-loads from env
-    voice: str = "alloy"
-)
-```
-
-**SipHeaders** - SIP connection configuration
-```python
-SipHeaders(
-    sip_to: str,  # e.g., "sip:+19999999999@gateway.com"
-    auth_user: Optional[str] = None,  # Auto-loads from SIP_USERNAME
-    auth_password: Optional[str] = None,  # Auto-loads from SIP_PASSWORD
-    gateway: Optional[str] = None,  # Auto-loaded from SIP_GATEWAY
-    local_ip: Optional[str] = None,
-    local_port: int = 5060
-)
-```
-
-**Sippy** - Main client
-```python
-Sippy(
-    voice_service: Optional[VoiceService] = None,
-    transcription_service: Optional[VoiceService] = None,
-    output_dir: Optional[Path] = None,
-    log_level: int = 3
-)
-
-# Make a call
-sippy.call(
-    target: SipHeaders,
-    prompt: Optional[str] = None,
-    prompt_file: Optional[Path] = None,
-    timeout: float = 30.0,
-    transcribe: bool = True
-) -> CallResponse
-```
-
-**CallResponse** - Result object
-```python
-@dataclass
-class CallResponse:
-    established: bool
-    duration: float
-    recording: Optional[Path]
-    transcript: Optional[str]
-    prompt_file: Optional[Path]
-    error: Optional[str]
-```
-
-### Low-Level Client API
-
-For advanced use cases requiring fine-grained control:
-
-```python
-from siptester.client import SipTestClient, SipScenario
-
-client = SipTestClient(
-    gateway="gateway.sip.livekit.cloud",
-    username="user",
-    password="pass",
-    local_ip="67.198.117.118"
-)
-
-with client:
-    scenario = SipScenario(
-        phone="+19999999999",
-        prompt_file=Path("prompt.wav"),
-        record_file=Path("response.wav"),
-        timeout=30.0
-    )
-    result = client.run_scenario(scenario)
-```
+| Component | Status |
+|-----------|--------|
+| PJSIP bindings | ✅ working |
+| Python SDK / `Sippy` | ✅ working |
+| OpenAI TTS · Deepgram STT | ✅ working |
+| Live SIP call (LiveKit gateway) | ✅ ~28s call, transcript received |
+| Audio recording | ✅ working |
+| MCP server | ✅ AI agent can place calls |
+| CLI | ✅ working |
 
 ---
 
 ## Roadmap
 
-See [`projectplan.md`](projectplan.md) for detailed milestones.
-
-### Upcoming Features
-
-**Phase 1: SDK Stabilization**
-- [ ] Publish to internal PyPI
-- [ ] Unit tests with PJSIP mocking
-- [ ] Type stubs and mypy coverage
-- [x] End-to-end testing framework ✅
-
-**Phase 2: CLI Enhancements**
-- [ ] Config file support (`~/.isip/config.yaml`)
-- [ ] JSON output and waveform previews
-- [ ] Parallel test execution with retries
-
-**Phase 3: Scenario Catalog**
-- [ ] Shared test definitions with ResoN8
-- [ ] `siptester fetch` command for curated scenarios
-
-**Phase 4: Cross-Platform**
-- [ ] Linux support validation
-- [ ] Windows compatibility (WSL2)
-- [ ] Docker image optimization
-
-**Phase 5: ResoN8 Integration**
-- [ ] Cloud burst API
-- [ ] Centralized reporting
-- [ ] Load testing at scale
+- **SDK hardening** — packaging, unit tests with PJSIP mocking, type coverage.
+- **CLI** — config file (`~/.isip/config.yaml`), JSON output, parallel runs with retries.
+- **Agent telephony** — richer MCP tools (multi-turn conversations, DTMF/IVR navigation, call transfer), and the agent-to-agent VOB use case.
+- **Cross-platform** — Linux validation, Docker image optimization.
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
-
-**1. PJSIP not found**
-```bash
-brew install pjproject
-```
-
-**2. ffmpeg not found**
-```bash
-brew install ffmpeg
-```
-
-**3. Microphone permissions**
-Grant permissions in System Preferences → Security & Privacy → Microphone
-
-**4. NAT/Firewall issues**
-May need to configure `local_ip` parameter with your public IP:
-```python
-target = SipHeaders(sip_to="sip:...", local_ip="67.198.117.118")
-```
-
-**5. SIP authentication failed**
-Verify credentials with your SIP provider. For email-based usernames (e.g., `nate@ravenhelm.co`), the SDK automatically handles the formatting.
-
-**6. Double @ in SIP URI**
-Fixed automatically - the SDK extracts the user part from email addresses.
+- **`pjsua`/PJSIP not found** → `brew install pjproject`
+- **`ffmpeg` not found** → `brew install ffmpeg`
+- **Microphone permissions** → System Settings → Privacy & Security → Microphone
+- **NAT/firewall** → set `local_ip` to your public IP on `SipHeaders(...)`
+- **SIP auth failed** → verify credentials with your SIP provider; email-style usernames are normalized automatically.
 
 ---
 
-## Contributing
+## Credits & license
 
-This is currently a prototype in active development. Contributions welcome!
+Built with [PJSIP](https://www.pjsip.org/), [OpenAI](https://openai.com/) (TTS), [Deepgram](https://deepgram.com/) (STT), and tested against the [LiveKit](https://livekit.io/) SIP gateway.
 
-**Development Setup:**
-```bash
-git clone <repo>
-cd isip/sdk/python
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"  # When dev dependencies are added
-```
-
-**Before committing:**
-- Ensure tests pass: `python test_e2e.py`
-- Check for linter errors
-- Update documentation if adding features
-
----
-
-## Related Projects
-
-- **ResoN8** - Cloud-based SIP testing platform (planned integration)
-- **PJSIP** - Underlying SIP protocol stack
-- **LiveKit** - SIP gateway used for testing
-
----
-
-## License
-
-[Specify your license here]
-
----
-
-## Credits
-
-Built with:
-- [PJSIP](https://www.pjsip.org/) - SIP protocol stack
-- [OpenAI](https://openai.com/) - Text-to-speech
-- [Deepgram](https://deepgram.com/) - Speech-to-text
-- [LiveKit](https://livekit.io/) - SIP gateway
-
----
-
-## Support
-
-For issues, questions, or feature requests:
-- Review [`EXAMPLES.md`](EXAMPLES.md) for detailed usage
-- Check [`DEPLOYMENT.md`](DEPLOYMENT.md) for deployment help
-- See [`projectplan.md`](projectplan.md) for development status
-
----
+MIT — see [LICENSE](LICENSE).
 
 <div align="center">
 
-**Made with ❤️ for engineers who need to test SIP calls without the cloud overhead**
+**Give your agent a phone.**
 
 </div>
